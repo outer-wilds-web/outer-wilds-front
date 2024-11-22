@@ -11,11 +11,10 @@
   --light-color: #f8f9fa;
   --dark-color: #343a40;
 
-  --primary-text-color: #212529;
+  --primary-text-color: #ffffff;
   --secondary-text-color: #495057;
 }
 
-h1 {
-  font-size: large;
-  font-weight: 500;
+body {
+  color: var(--primary-text-color);
 }
