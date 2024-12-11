@@ -11,6 +11,8 @@ import ActivateAtreboisLogo from '@/assets/images/atrebois_orange.png'
 import ActivateCraviteLogo from '@/assets/images/cravite_orange.png'
 import ActivateLeviatheLogo from '@/assets/images/leviathe_orange.png'
 import ActivateSombronceLogo from '@/assets/images/sombronce_orange.png'
+import TheShipLogo from '@/assets/images/theship.jpg'
+import ActivateTheShipLogo from '@/assets/images/theship.jpg'
 
 import ToggleButton from './ToggleButton.vue'
 
@@ -64,6 +66,11 @@ const toggleFreeCamera = () => {
           :src="focus === 'sombronce' ? ActivateSombronceLogo : SombronceLogo"
           alt="Sombronce"
           @click="() => handleLogoClick('sombronce')"
+        />
+        <img
+          :src="focus === 'theship' ? ActivateTheShipLogo : TheShipLogo"
+          alt="The Ship"
+          @click="() => handleLogoClick('theship')"
         />
       </div>
       <div class="toggles">

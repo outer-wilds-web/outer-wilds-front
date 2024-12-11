@@ -5,8 +5,25 @@ import * as THREE from 'three'
 import Planet from '@/threejs/Planet'
 import OptionButton from '@/components/OptionButton.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
+import { GLTFLoader } from 'three/examples/jsm/Addons.js'
 
 const test = new SceneInit()
+
+const shipLoader = new GLTFLoader()
+let theship: THREE.Group
+shipLoader.load(
+  '3DModels/theship.glb',
+  (gltf) => {
+    theship = gltf.scene
+    theship.scale.set(1, 1, 1)
+    test.scene.add(theship)
+    theship.position.set(0, 0, 50)
+  },
+  undefined,
+  (error) => {
+    console.error('An error occurred while loading the model:', error)
+  }
+)
 
 const sunTexture = new THREE.TextureLoader().load('sun.jpeg')
 const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture })
@@ -78,7 +95,7 @@ onMounted(() => {
 
   var stars = new Array(0)
   const exclusionRadius = 10000 // Rayon de la sphère sans étoiles
-  for (var i = 0; i < 1000000; i++) {
+  for (var i = 0; i < 300000; i++) {
     let x = THREE.MathUtils.randFloatSpread(70000)
     let y = THREE.MathUtils.randFloatSpread(70000)
     let z = THREE.MathUtils.randFloatSpread(70000)
@@ -93,6 +110,16 @@ onMounted(() => {
   test.scene.add(starField)
 
   //#endregion : --- Space background
+
+  //#region :    --- Lights
+
+  const sunLight = new THREE.PointLight(0xffffff, 10000, 1000)
+  sunMesh.add(sunLight)
+
+  const ambiantLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 1)
+  test.scene.add(ambiantLight)
+
+  //#endregion : --- Lights
 
   test.scene.add(solarSystem)
   sablieresSystem.add(sablieresMesh)
@@ -117,7 +144,6 @@ onMounted(() => {
   )
 
   setInterval(() => {
-    console.log('Adding point to trajectory')
     addPointToTrajectory(sablieresMesh, trajectories.sablieres)
     addPointToTrajectory(atreboisMesh, trajectories.atrebois)
     addPointToTrajectory(craviteMesh, trajectories.cravite)
@@ -199,6 +225,9 @@ function handleChangeFocus(logo: string) {
   } else if (logo === 'sombronce') {
     updateCamera(sombronceMesh.position.x, sombronceMesh.position.y, 0)
     cameraFocus.value = 'sombronce'
+  } else if (logo == 'theship') {
+    updateCamera(theship.position.x, theship.position.y + 3, theship.position.z)
+    cameraFocus.value = 'theship'
   }
 }
 

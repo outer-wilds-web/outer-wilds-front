@@ -31,3 +31,5 @@ coverage
 
 package-lock.json
 .env
+
+3DModels/
