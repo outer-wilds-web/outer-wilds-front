@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, onBeforeUnmount } from 'vue'
 import SceneInit from '@/threejs/SceneInit'
 import * as THREE from 'three'
 import Planet from '@/threejs/Planet'
@@ -87,6 +87,136 @@ function addPointToTrajectory(planetMesh: THREE.Mesh, trajectory: THREE.Line) {
   trajectory.geometry.setDrawRange(0, newPositions.length / 3)
 }
 
+let keyPressed = {
+  engines: {
+    front: false,
+    back: false,
+    left: false,
+    right: false,
+    up: false,
+    down: false
+  },
+  rotation: {
+    left: false,
+    right: false,
+    up: false,
+    down: false
+  }
+}
+
+function handleKeyDown(event: KeyboardEvent, ws: WebSocket) {
+  let keyChanged = false
+  switch (event.key) {
+    case 's':
+      keyPressed.engines.front = true
+      keyChanged = true
+      break
+    case 'z':
+      keyPressed.engines.back = true
+      keyChanged = true
+      break
+    case 'd':
+      keyPressed.engines.left = true
+      keyChanged = true
+      break
+    case 'q':
+      keyPressed.engines.right = true
+      keyChanged = true
+      break
+    case 'e':
+      keyPressed.engines.up = true
+      keyChanged = true
+      break
+    case 'a':
+      keyPressed.engines.down = true
+      keyChanged = true
+      break
+    case 'ArrowRight':
+      keyPressed.rotation.left = true
+      keyChanged = true
+      break
+    case 'ArrowLeft':
+      keyPressed.rotation.right = true
+      keyChanged = true
+      break
+    case 'ArrowDown':
+      keyPressed.rotation.up = true
+      keyChanged = true
+      break
+    case 'ArrowUp':
+      keyPressed.rotation.down = true
+      keyChanged = true
+      break
+  }
+  if (keyChanged) {
+    sendShipData(ws)
+  }
+}
+
+function handleKeyUp(event: KeyboardEvent, ws: WebSocket) {
+  let keyChanged = false
+  switch (event.key) {
+    case 's':
+      keyPressed.engines.front = false
+      keyChanged = true
+      break
+    case 'z':
+      keyPressed.engines.back = false
+      keyChanged = true
+      break
+    case 'd':
+      keyPressed.engines.left = false
+      keyChanged = true
+      break
+    case 'q':
+      keyPressed.engines.right = false
+      keyChanged = true
+      break
+    case 'e':
+      keyPressed.engines.up = false
+      keyChanged = true
+      break
+    case 'a':
+      keyPressed.engines.down = false
+      keyChanged = true
+      break
+    case 'ArrowRight':
+      keyPressed.rotation.left = false
+      keyChanged = true
+      break
+    case 'ArrowLeft':
+      keyPressed.rotation.right = false
+      keyChanged = true
+      break
+    case 'ArrowDown':
+      keyPressed.rotation.up = false
+      keyChanged = true
+      break
+    case 'ArrowUp':
+      keyPressed.rotation.down = false
+      keyChanged = true
+      break
+  }
+
+  if (keyChanged) {
+    sendShipData(ws)
+  }
+}
+
+function sendShipData(ws: WebSocket) {
+  if (ws.readyState === ws.OPEN) {
+    ws.send(
+      JSON.stringify({
+        type: 'ship',
+        data: {
+          engines: keyPressed.engines,
+          rotation: keyPressed.rotation
+        }
+      })
+    )
+  }
+}
+
 onMounted(() => {
   test.init()
   test.animate()
@@ -172,19 +302,59 @@ onMounted(() => {
     console.log('Connected to the server')
   }
 
+  // Receive data from the server
   ws.onmessage = (message) => {
     const data = JSON.parse(message.data)
-    sablieresMesh.position.set(data[0][1][0], data[0][1][1], 0)
-    atreboisMesh.position.set(data[1][1][0], data[1][1][1], 0)
-    craviteMesh.position.set(data[2][1][0], data[2][1][1], 0)
-    leviatheMesh.position.set(data[3][1][0], data[3][1][1], 0)
-    sombronceMesh.position.set(data[4][1][0], data[4][1][1], 0)
+    // console.log(data)
+
+    sablieresMesh.position.set(data['planets'][0][1][0], data['planets'][0][1][1], 0)
+    atreboisMesh.position.set(data['planets'][1][1][0], data['planets'][1][1][1], 0)
+    craviteMesh.position.set(data['planets'][2][1][0], data['planets'][2][1][1], 0)
+    leviatheMesh.position.set(data['planets'][3][1][0], data['planets'][3][1][1], 0)
+    sombronceMesh.position.set(data['planets'][4][1][0], data['planets'][4][1][1], 0)
+    theship.position.set(
+      data['ship']['position'][0],
+      data['ship']['position'][1],
+      data['ship']['position'][2]
+    )
+    theship.lookAt(
+      data['ship']['direction'][0] * 1000000,
+      data['ship']['direction'][1] * 1000000,
+      data['ship']['direction'][2] * 1000000
+    )
 
     // update the camera focus to follow a planet
     if (!freeCamera.value) {
       handleChangeFocus(cameraFocus.value)
     }
+
+    // update the camera position to follow the ship
+    if (!freeCamera.value && cameraFocus.value === 'theship') {
+      test.camera.position.set(
+        data['ship']['position'][0] + data['ship']['direction'][0] * 10,
+        data['ship']['position'][1] + data['ship']['direction'][1] * 10,
+        data['ship']['position'][2] + data['ship']['direction'][2] * 10
+      )
+      test.camera.lookAt(
+        data['ship']['direction'][0] * 1000000,
+        data['ship']['direction'][1] * 1000000,
+        data['ship']['direction'][2] * 1000000
+      )
+      test.controls.target.set(
+        data['ship']['direction'][0] * 1000000,
+        data['ship']['direction'][1] * 1000000,
+        data['ship']['direction'][2] * 1000000
+      )
+    }
   }
+
+  //#region :    --- Keyboard events to move the ship
+
+  window.addEventListener('keydown', (event: KeyboardEvent) => handleKeyDown(event, ws))
+  window.addEventListener('keyup', (event: KeyboardEvent) => handleKeyUp(event, ws))
+  sendShipData(ws)
+
+  //#endregion : --- Keyboard events to move the ship
 
   ws.onclose = () => {
     console.log('Disconnected from the server')
@@ -201,7 +371,6 @@ function toggleSettingPanel() {
 }
 
 function updateCamera(x: number, y: number, z: number = 0) {
-  // test.camera.position.set(x, y, z + fov)
   test.camera.lookAt(x, y, z)
   test.controls.target.set(x, y, z)
 }
