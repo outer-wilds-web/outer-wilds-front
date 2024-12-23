@@ -26,3 +26,15 @@ export function loadModel(group: THREE.Group, scene: SceneInit, url: string, bac
     )
 
 }
+
+export function addPointToTrajectory(group: THREE.Group, trajectory: THREE.Line, ready: boolean = false) {
+    if (ready) {
+        const positions = trajectory.geometry.attributes.position.array
+        const newPositions = new Float32Array(positions.length + 3)
+        newPositions.set(positions)
+        newPositions.set([group.position.x, group.position.y, group.position.z], positions.length)
+        trajectory.geometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3))
+        trajectory.geometry.attributes.position.needsUpdate = true
+        trajectory.geometry.setDrawRange(0, newPositions.length / 3)
+    }
+}

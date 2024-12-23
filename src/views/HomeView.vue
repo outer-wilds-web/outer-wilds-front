@@ -7,7 +7,9 @@ import OptionButton from '@/components/OptionButton.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
 import LoadingOverlay from '@/components/LoadingOverlay.vue'
 
-import { loadModel } from '@/helpers/threejs_helper'
+import { addPointToTrajectory, loadModel } from '@/helpers/threejs_helper'
+import { handleKeyDown, handleKeyUp } from '@/helpers/controller_helper'
+import { sendShipData } from '@/helpers/websocket_helper'
 
 const loading = ref(true)
 const loadingProgress = ref(0)
@@ -15,7 +17,7 @@ const loadingProgress = ref(0)
 const totalModels = 8
 let loadedModels = 0
 
-const onLoad = () => {
+function onLoad() {
   loadedModels++
   loadingProgress.value = loadedModels / totalModels
   if (loadedModels === totalModels) {
@@ -122,18 +124,6 @@ const trajectories = {
   )
 }
 
-function addPointToTrajectory(group: THREE.Group, trajectory: THREE.Line, ready: boolean = false) {
-  if (ready) {
-    const positions = trajectory.geometry.attributes.position.array
-    const newPositions = new Float32Array(positions.length + 3)
-    newPositions.set(positions)
-    newPositions.set([group.position.x, group.position.y, group.position.z], positions.length)
-    trajectory.geometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3))
-    trajectory.geometry.attributes.position.needsUpdate = true
-    trajectory.geometry.setDrawRange(0, newPositions.length / 3)
-  }
-}
-
 let keyPressed = {
   engines: {
     front: false,
@@ -148,119 +138,6 @@ let keyPressed = {
     right: false,
     up: false,
     down: false
-  }
-}
-
-function handleKeyDown(event: KeyboardEvent, ws: WebSocket) {
-  let keyChanged = false
-  switch (event.key) {
-    case 's':
-      keyPressed.engines.front = true
-      keyChanged = true
-      break
-    case 'z':
-      keyPressed.engines.back = true
-      keyChanged = true
-      break
-    case 'd':
-      keyPressed.engines.left = true
-      keyChanged = true
-      break
-    case 'q':
-      keyPressed.engines.right = true
-      keyChanged = true
-      break
-    case 'e':
-      keyPressed.engines.up = true
-      keyChanged = true
-      break
-    case 'a':
-      keyPressed.engines.down = true
-      keyChanged = true
-      break
-    case 'ArrowRight':
-      keyPressed.rotation.left = true
-      keyChanged = true
-      break
-    case 'ArrowLeft':
-      keyPressed.rotation.right = true
-      keyChanged = true
-      break
-    case 'ArrowDown':
-      keyPressed.rotation.up = true
-      keyChanged = true
-      break
-    case 'ArrowUp':
-      keyPressed.rotation.down = true
-      keyChanged = true
-      break
-  }
-  if (keyChanged) {
-    sendShipData(ws)
-  }
-}
-
-function handleKeyUp(event: KeyboardEvent, ws: WebSocket) {
-  let keyChanged = false
-  switch (event.key) {
-    case 's':
-      keyPressed.engines.front = false
-      keyChanged = true
-      break
-    case 'z':
-      keyPressed.engines.back = false
-      keyChanged = true
-      break
-    case 'd':
-      keyPressed.engines.left = false
-      keyChanged = true
-      break
-    case 'q':
-      keyPressed.engines.right = false
-      keyChanged = true
-      break
-    case 'e':
-      keyPressed.engines.up = false
-      keyChanged = true
-      break
-    case 'a':
-      keyPressed.engines.down = false
-      keyChanged = true
-      break
-    case 'ArrowRight':
-      keyPressed.rotation.left = false
-      keyChanged = true
-      break
-    case 'ArrowLeft':
-      keyPressed.rotation.right = false
-      keyChanged = true
-      break
-    case 'ArrowDown':
-      keyPressed.rotation.up = false
-      keyChanged = true
-      break
-    case 'ArrowUp':
-      keyPressed.rotation.down = false
-      keyChanged = true
-      break
-  }
-
-  if (keyChanged) {
-    sendShipData(ws)
-  }
-}
-
-function sendShipData(ws: WebSocket) {
-  if (ws.readyState === ws.OPEN) {
-    ws.send(
-      JSON.stringify({
-        type: 'ship',
-        data: {
-          engines: keyPressed.engines,
-          rotation: keyPressed.rotation
-        }
-      })
-    )
   }
 }
 
@@ -340,6 +217,8 @@ onMounted(() => {
   }
   animate()
 
+  //#region :    --- Websocket events
+
   ws.onopen = () => {
     console.log('Connected to the server')
     onLoad()
@@ -391,14 +270,6 @@ onMounted(() => {
     }
   }
 
-  //#region :    --- Keyboard events to move the ship
-
-  window.addEventListener('keydown', (event: KeyboardEvent) => handleKeyDown(event, ws))
-  window.addEventListener('keyup', (event: KeyboardEvent) => handleKeyUp(event, ws))
-  sendShipData(ws)
-
-  //#endregion : --- Keyboard events to move the ship
-
   ws.onclose = () => {
     console.log('Disconnected from the server')
   }
@@ -406,9 +277,19 @@ onMounted(() => {
   ws.onerror = (error) => {
     console.log(error)
   }
+  //#endregion : --- Websocket events
+
+  //#region :    --- Keyboard events to move the ship
+
+  window.addEventListener('keydown', (event: KeyboardEvent) => handleKeyDown(event, ws, keyPressed))
+  window.addEventListener('keyup', (event: KeyboardEvent) => handleKeyUp(event, ws, keyPressed))
+  sendShipData(ws, keyPressed)
+
+  //#endregion : --- Keyboard events to move the ship
 })
 
 const settingPanelVisible = ref(false)
+
 function toggleSettingPanel() {
   settingPanelVisible.value = !settingPanelVisible.value
 }
