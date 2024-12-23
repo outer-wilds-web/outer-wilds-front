@@ -1,55 +1,103 @@
 <script setup lang="ts">
-import { onMounted, ref, onBeforeUnmount } from 'vue'
+import { onMounted, ref } from 'vue'
 import SceneInit from '@/threejs/SceneInit'
 import * as THREE from 'three'
 import Planet from '@/threejs/Planet'
 import OptionButton from '@/components/OptionButton.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
-import { GLTFLoader } from 'three/examples/jsm/Addons.js'
+import LoadingOverlay from '@/components/LoadingOverlay.vue'
+
+import { loadModel } from '@/helpers/threejs_helper'
+
+const loading = ref(true)
+const loadingProgress = ref(0)
+
+const totalModels = 8
+let loadedModels = 0
+
+const onLoad = () => {
+  loadedModels++
+  loadingProgress.value = loadedModels / totalModels
+  if (loadedModels === totalModels) {
+    loading.value = false
+  }
+}
 
 const test = new SceneInit()
 
-const shipLoader = new GLTFLoader()
-let theship: THREE.Group
-shipLoader.load(
+let theship = new THREE.Group()
+loadModel(
+  theship,
+  test,
   '3DModels/theship.glb',
-  (gltf) => {
-    theship = gltf.scene
-    theship.scale.set(1, 1, 1)
-    test.scene.add(theship)
-    theship.position.set(0, 0, 50)
-  },
-  undefined,
-  (error) => {
-    console.error('An error occurred while loading the model:', error)
-  }
+  '3DModels/spaceship.glb',
+  [1, 1, 1],
+  [0, 0, 0],
+  onLoad
 )
 
-const sunTexture = new THREE.TextureLoader().load('sun.jpeg')
-const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture })
-const sunGeometry = new THREE.SphereGeometry(20, 32, 32)
-const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial)
 const solarSystem = new THREE.Group()
 
-const sablieres = new Planet(2, 16, 16, 'mercury.png')
-const sablieresMesh = sablieres.getMesh()
-const sablieresSystem = new THREE.Group()
+const sun = new THREE.Group()
+loadModel(
+  sun,
+  test,
+  '3DModels/sun.glb',
+  '3DModels/solar_system/sun.glb',
+  [1, 1, 1],
+  [0, 0, 0],
+  onLoad
+)
 
-const atrebois = new Planet(3, 32, 32, 'venus.jpeg')
-const atreboisMesh = atrebois.getMesh()
-const atreboisSystem = new THREE.Group()
+const sablieres = new Planet(
+  0.01,
+  16,
+  0,
+  '3DModels/sand_earth.glb',
+  '3DModels/solar_system/mercury.glb',
+  test,
+  onLoad
+)
 
-const cravite = new Planet(4, 64, 64, 'earth.jpeg')
-const craviteMesh = cravite.getMesh()
-const craviteSystem = new THREE.Group()
+const atrebois = new Planet(
+  0.01,
+  32,
+  0,
+  '3DModels/timber_earth.glb',
+  '3DModels/solar_system/venus.glb',
+  test,
+  onLoad
+)
 
-const leviathe = new Planet(7, 128, 128, 'mars.jpeg')
-const leviatheMesh = leviathe.getMesh()
-const leviatheSystem = new THREE.Group()
+const cravite = new Planet(
+  0.01,
+  64,
+  0,
+  '3DModels/cravite_earth.glb',
+  '3DModels/solar_system/earth.glb',
+  test,
+  onLoad
+)
 
-const sombronce = new Planet(6, 256, 256, 'sun.jpeg')
-const sombronceMesh = sombronce.getMesh()
-const sombronceSystem = new THREE.Group()
+const leviathe = new Planet(
+  0.01,
+  128,
+  0,
+  '3DModels/leviathe_earth.glb',
+  '3DModels/solar_system/mars.glb',
+  test,
+  onLoad
+)
+
+const sombronce = new Planet(
+  0.01,
+  256,
+  0,
+  '3DModels/sombronce_earth.glb',
+  '3DModels/solar_system/jupiter.glb',
+  test,
+  onLoad
+)
 
 const trajectories = {
   sablieres: new THREE.Line(
@@ -74,17 +122,16 @@ const trajectories = {
   )
 }
 
-function addPointToTrajectory(planetMesh: THREE.Mesh, trajectory: THREE.Line) {
-  const positions = trajectory.geometry.attributes.position.array
-  const newPositions = new Float32Array(positions.length + 3)
-  newPositions.set(positions)
-  newPositions.set(
-    [planetMesh.position.x, planetMesh.position.y, planetMesh.position.z],
-    positions.length
-  )
-  trajectory.geometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3))
-  trajectory.geometry.attributes.position.needsUpdate = true
-  trajectory.geometry.setDrawRange(0, newPositions.length / 3)
+function addPointToTrajectory(group: THREE.Group, trajectory: THREE.Line, ready: boolean = false) {
+  if (ready) {
+    const positions = trajectory.geometry.attributes.position.array
+    const newPositions = new Float32Array(positions.length + 3)
+    newPositions.set(positions)
+    newPositions.set([group.position.x, group.position.y, group.position.z], positions.length)
+    trajectory.geometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3))
+    trajectory.geometry.attributes.position.needsUpdate = true
+    trajectory.geometry.setDrawRange(0, newPositions.length / 3)
+  }
 }
 
 let keyPressed = {
@@ -244,7 +291,7 @@ onMounted(() => {
   //#region :    --- Lights
 
   const sunLight = new THREE.PointLight(0xffffff, 10000, 1000)
-  sunMesh.add(sunLight)
+  sun.add(sunLight)
 
   const ambiantLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 1)
   test.scene.add(ambiantLight)
@@ -252,18 +299,13 @@ onMounted(() => {
   //#endregion : --- Lights
 
   test.scene.add(solarSystem)
-  sablieresSystem.add(sablieresMesh)
-  atreboisSystem.add(atreboisMesh)
-  craviteSystem.add(craviteMesh)
-  leviatheSystem.add(leviatheMesh)
-  sombronceSystem.add(sombronceMesh)
   solarSystem.add(
-    sunMesh,
-    sablieresSystem,
-    atreboisSystem,
-    craviteSystem,
-    leviatheSystem,
-    sombronceSystem
+    sun,
+    sablieres.group,
+    atrebois.group,
+    cravite.group,
+    leviathe.group,
+    sombronce.group
   )
   solarSystem.add(
     trajectories.sablieres,
@@ -274,24 +316,24 @@ onMounted(() => {
   )
 
   setInterval(() => {
-    addPointToTrajectory(sablieresMesh, trajectories.sablieres)
-    addPointToTrajectory(atreboisMesh, trajectories.atrebois)
-    addPointToTrajectory(craviteMesh, trajectories.cravite)
-    addPointToTrajectory(leviatheMesh, trajectories.leviathe)
-    addPointToTrajectory(sombronceMesh, trajectories.sombronce)
-  }, 1000 / 60)
+    addPointToTrajectory(sablieres.group, trajectories.sablieres, !loading.value)
+    addPointToTrajectory(atrebois.group, trajectories.atrebois, !loading.value)
+    addPointToTrajectory(cravite.group, trajectories.cravite, !loading.value)
+    addPointToTrajectory(leviathe.group, trajectories.leviathe, !loading.value)
+    addPointToTrajectory(sombronce.group, trajectories.sombronce, !loading.value)
+  }, 500)
 
   // Connect to WebSocker
   const ws = new WebSocket('ws://localhost:3012')
 
   // Animate solar system
   const animate = () => {
-    sunMesh.rotation.y += 0.01
-    sablieresMesh.rotation.y += 0.05
-    atreboisMesh.rotation.y += 0.04
-    craviteMesh.rotation.y += 0.02
-    leviatheMesh.rotation.y += 0.01
-    sombronceMesh.rotation.y += 0.005
+    sun.rotation.y += 0.01
+    sablieres.group.rotation.y += 0.05
+    atrebois.group.rotation.y += 0.04
+    cravite.group.rotation.y += 0.02
+    leviathe.group.rotation.y += 0.01
+    sombronce.group.rotation.y += 0.005
 
     requestAnimationFrame(animate)
     test.renderer.render(test.scene, test.camera)
@@ -300,6 +342,7 @@ onMounted(() => {
 
   ws.onopen = () => {
     console.log('Connected to the server')
+    onLoad()
   }
 
   // Receive data from the server
@@ -307,11 +350,11 @@ onMounted(() => {
     const data = JSON.parse(message.data)
     // console.log(data)
 
-    sablieresMesh.position.set(data['planets'][0][1][0], data['planets'][0][1][1], 0)
-    atreboisMesh.position.set(data['planets'][1][1][0], data['planets'][1][1][1], 0)
-    craviteMesh.position.set(data['planets'][2][1][0], data['planets'][2][1][1], 0)
-    leviatheMesh.position.set(data['planets'][3][1][0], data['planets'][3][1][1], 0)
-    sombronceMesh.position.set(data['planets'][4][1][0], data['planets'][4][1][1], 0)
+    sablieres.group.position.set(data['planets'][0][1][0], data['planets'][0][1][1], 0)
+    atrebois.group.position.set(data['planets'][1][1][0], data['planets'][1][1][1], 0)
+    cravite.group.position.set(data['planets'][2][1][0], data['planets'][2][1][1], 0)
+    leviathe.group.position.set(data['planets'][3][1][0], data['planets'][3][1][1], 0)
+    sombronce.group.position.set(data['planets'][4][1][0], data['planets'][4][1][1], 0)
     theship.position.set(
       data['ship']['position'][0],
       data['ship']['position'][1],
@@ -380,19 +423,19 @@ function handleChangeFocus(logo: string) {
     updateCamera(0, 0, 0)
     cameraFocus.value = 'sun'
   } else if (logo === 'sablieres') {
-    updateCamera(sablieresMesh.position.x, sablieresMesh.position.y, 0)
+    updateCamera(sablieres.group.position.x, sablieres.group.position.y, 0)
     cameraFocus.value = 'sablieres'
   } else if (logo === 'atrebois') {
-    updateCamera(atreboisMesh.position.x, atreboisMesh.position.y, 0)
+    updateCamera(atrebois.group.position.x, atrebois.group.position.y, 0)
     cameraFocus.value = 'atrebois'
   } else if (logo === 'cravite') {
-    updateCamera(craviteMesh.position.x, craviteMesh.position.y, 0)
+    updateCamera(cravite.group.position.x, cravite.group.position.y, 0)
     cameraFocus.value = 'cravite'
   } else if (logo === 'leviathe') {
-    updateCamera(leviatheMesh.position.x, leviatheMesh.position.y, 0)
+    updateCamera(leviathe.group.position.x, leviathe.group.position.y, 0)
     cameraFocus.value = 'leviathe'
   } else if (logo === 'sombronce') {
-    updateCamera(sombronceMesh.position.x, sombronceMesh.position.y, 0)
+    updateCamera(sombronce.group.position.x, sombronce.group.position.y, 0)
     cameraFocus.value = 'sombronce'
   } else if (logo == 'theship') {
     updateCamera(theship.position.x, theship.position.y + 3, theship.position.z)
@@ -408,6 +451,7 @@ function toggleFreeCamera() {
 </script>
 
 <template>
+  <LoadingOverlay :progress="loadingProgress" :loading="loading" />
   <canvas id="canvas" />
   <OptionButton class="options" @click="toggleSettingPanel" />
   <SettingsPanel

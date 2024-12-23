@@ -32,4 +32,6 @@ coverage
 package-lock.json
 .env
 
-3DModels/
+public/3DModels/*
+!public/3DModels/spaceship.glb
+!public/3DModels/solar_system/

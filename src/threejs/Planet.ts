@@ -1,30 +1,29 @@
 import * as THREE from 'three';
 
+import SceneInit from './SceneInit';
+
+import { loadModel } from '@/helpers/threejs_helper';
+
 export default class Planet {
   radius: number;
   positionX: number;
   positionY: number;
-  textureFile: string;
-  mesh: THREE.Mesh | null;
+  modelUrl: string;
+  backupModelUrl: string;
+  scene: SceneInit;
+  group: THREE.Group;
+  onLoad: () => void;
 
-  constructor(radius: number, positionX: number, positionY: number, textureFile: string) {
+  constructor(radius: number, positionX: number, positionY: number, modelUrl: string, backupModelUrl: string, scene: SceneInit, onLoad: () => void) {
     this.radius = radius;
     this.positionX = positionX;
     this.positionY = positionY;
-    this.textureFile = textureFile;
-    this.mesh = null;
-  }
+    this.modelUrl = modelUrl;
+    this.backupModelUrl = backupModelUrl;
+    this.scene = scene;
+    this.group = new THREE.Group();
+    this.onLoad = onLoad;
 
-  getMesh() {
-    if (this.mesh === undefined || this.mesh === null) {
-      const geometry = new THREE.SphereGeometry(this.radius);
-      const texture = new THREE.TextureLoader().load(this.textureFile);
-      const material = new THREE.MeshBasicMaterial({ map: texture });
-      this.mesh = new THREE.Mesh(geometry, material);
-      this.mesh.position.x = this.positionX;
-      this.mesh.position.y = this.positionY;
-    }
-
-    return this.mesh;
+    loadModel(this.group, this.scene, this.modelUrl, this.backupModelUrl, [this.radius, this.radius, this.radius], [this.positionX, this.positionY, 0], this.onLoad);
   }
 }
