@@ -224,10 +224,11 @@ onMounted(() => {
     onLoad()
   }
 
+  const ships: any = {}
+
   // Receive data from the server
   ws.onmessage = (message) => {
     const data = JSON.parse(message.data)
-    // console.log(data)
 
     sablieres.group.position.set(data['planets'][0][1][0], data['planets'][0][1][1], 0)
     atrebois.group.position.set(data['planets'][1][1][0], data['planets'][1][1][1], 0)
@@ -244,6 +245,42 @@ onMounted(() => {
       data['ship']['direction'][1] * 1000000,
       data['ship']['direction'][2] * 1000000
     )
+
+    data['ships'].forEach((shipData: any) => {
+      const shipId = shipData['uuid']
+      if (!ships[shipId]) {
+        ships[shipId] = new THREE.Group()
+        loadModel(
+          ships[shipId],
+          test,
+          '3DModels/theship.glb',
+          '3DModels/spaceship.glb',
+          [1, 1, 1],
+          [0, 0, 0],
+          onLoad
+        )
+        solarSystem.add(ships[shipId])
+      }
+
+      ships[shipId].position.set(
+        shipData['position'][0],
+        shipData['position'][1],
+        shipData['position'][2]
+      )
+      ships[shipId].lookAt(
+        shipData['direction'][0] * 1000000,
+        shipData['direction'][1] * 1000000,
+        shipData['direction'][2] * 1000000
+      )
+    })
+
+    // remove ship which are not send data
+    Object.keys(ships).forEach((shipId: any) => {
+      if (!data['ships'].some((shipData: any) => shipData['uuid'] === shipId)) {
+        test.scene.remove(ships[shipId])
+        delete ships[shipId]
+      }
+    })
 
     // update the camera focus to follow a planet
     if (!freeCamera.value) {

@@ -15,11 +15,48 @@ import TheShipLogo from '@/assets/images/theship.jpg'
 import ActivateTheShipLogo from '@/assets/images/theship.jpg'
 
 import ToggleButton from './ToggleButton.vue'
+import ConnexionForm from './ConnexionForm.vue'
+import { useAuthStore } from '@/stores/auth'
+import { onMounted } from 'vue'
+import { useSetupStore } from '@/stores/setup'
 
 const props = defineProps({
   freeCamera: Boolean,
   focus: String
 })
+
+//#region :    --- Authentication
+
+const authStore = useAuthStore()
+const setupStore = useSetupStore()
+
+onMounted(async () => {
+  const serverUrl = import.meta.env.VITE_SERVER_URL
+  const email = import.meta.env.VITE_SERVER_EMAIL
+  const password = import.meta.env.VITE_SERVER_PASSWORD
+
+  // Fetch the auth API URL from the game server
+  const response = await fetch(`${serverUrl}/auth-api-url`)
+  const data = await response.json()
+  console.log(data)
+  const authApiUrl = data['auth_api_url']
+  const websocket_url = data['websocket_url']
+  setupStore.setBackendUrl(authApiUrl)
+  setupStore.setWebsocketUrl(websocket_url)
+
+  // Perform login
+  const loginResponse = await fetch(`${authApiUrl}/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ email, password })
+  })
+  const loginData = await loginResponse.json()
+  authStore.setToken(loginData.token)
+})
+
+//#endregion : --- Authentication
 
 const emit = defineEmits(['changeFocus', 'toggleFreeCamera'])
 
@@ -36,6 +73,7 @@ const toggleFreeCamera = () => {
   <div class="settings-panel">
     <h2>Settings</h2>
     <div class="settings">
+      <ConnexionForm />
       <div class="camera">
         <img
           :src="focus === 'sun' ? ActivateSunLogo : SunLogo"
