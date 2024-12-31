@@ -7,7 +7,7 @@ import OptionButton from '@/components/OptionButton.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
 import LoadingOverlay from '@/components/LoadingOverlay.vue'
 
-import { addPointToTrajectory, loadModel } from '@/helpers/threejs_helper'
+import { addPointToTrajectory, fetchShipHistory, loadModel } from '@/helpers/threejs_helper'
 import { handleKeyDown, handleKeyUp } from '@/helpers/controller_helper'
 import { sendShipData } from '@/helpers/websocket_helper'
 
@@ -102,25 +102,25 @@ const sombronce = new Planet(
 )
 
 const trajectories = {
-  sablieres: new THREE.Line(
+  sablieres: new THREE.Points(
     new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([], 3)),
-    new THREE.LineBasicMaterial({ color: 0xffffff })
+    new THREE.PointsMaterial({ color: 0x57f94d, size: 2 })
   ),
-  atrebois: new THREE.Line(
+  atrebois: new THREE.Points(
     new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([], 3)),
-    new THREE.LineBasicMaterial({ color: 0xffffff })
+    new THREE.PointsMaterial({ color: 0x57f94d, size: 2 })
   ),
-  cravite: new THREE.Line(
+  cravite: new THREE.Points(
     new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([], 3)),
-    new THREE.LineBasicMaterial({ color: 0xffffff })
+    new THREE.PointsMaterial({ color: 0x57f94d, size: 2 })
   ),
-  leviathe: new THREE.Line(
+  leviathe: new THREE.Points(
     new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([], 3)),
-    new THREE.LineBasicMaterial({ color: 0xffffff })
+    new THREE.PointsMaterial({ color: 0x57f94d, size: 2 })
   ),
-  sombronce: new THREE.Line(
+  sombronce: new THREE.Points(
     new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([], 3)),
-    new THREE.LineBasicMaterial({ color: 0xffffff })
+    new THREE.PointsMaterial({ color: 0x57f94d, size: 2 })
   )
 }
 
@@ -192,12 +192,17 @@ onMounted(() => {
     trajectories.sombronce
   )
 
+  const ships: any = {}
+
   setInterval(() => {
     addPointToTrajectory(sablieres.group, trajectories.sablieres, !loading.value)
     addPointToTrajectory(atrebois.group, trajectories.atrebois, !loading.value)
     addPointToTrajectory(cravite.group, trajectories.cravite, !loading.value)
     addPointToTrajectory(leviathe.group, trajectories.leviathe, !loading.value)
     addPointToTrajectory(sombronce.group, trajectories.sombronce, !loading.value)
+    Object.keys(ships).forEach((shipId: any) => {
+      addPointToTrajectory(ships[shipId].group, ships[shipId].trajectory, !loading.value)
+    })
   }, 500)
 
   // Connect to WebSocker
@@ -224,8 +229,6 @@ onMounted(() => {
     onLoad()
   }
 
-  const ships: any = {}
-
   // Receive data from the server
   ws.onmessage = (message) => {
     const data = JSON.parse(message.data)
@@ -249,9 +252,18 @@ onMounted(() => {
     data['ships'].forEach((shipData: any) => {
       const shipId = shipData['uuid']
       if (!ships[shipId]) {
-        ships[shipId] = new THREE.Group()
+        ships[shipId] = {
+          group: new THREE.Group(),
+          trajectory: new THREE.Points(
+            new THREE.BufferGeometry().setAttribute(
+              'position',
+              new THREE.Float32BufferAttribute([], 3)
+            ),
+            new THREE.PointsMaterial({ color: 0x57f94d, size: 2 })
+          )
+        }
         loadModel(
-          ships[shipId],
+          ships[shipId].group,
           test,
           '3DModels/theship.glb',
           '3DModels/spaceship.glb',
@@ -259,15 +271,17 @@ onMounted(() => {
           [0, 0, 0],
           onLoad
         )
-        solarSystem.add(ships[shipId])
+
+        solarSystem.add(ships[shipId].group)
+        fetchShipHistory(shipId, ships)
       }
 
-      ships[shipId].position.set(
+      ships[shipId].group.position.set(
         shipData['position'][0],
         shipData['position'][1],
         shipData['position'][2]
       )
-      ships[shipId].lookAt(
+      ships[shipId].group.lookAt(
         shipData['direction'][0] * 1000000,
         shipData['direction'][1] * 1000000,
         shipData['direction'][2] * 1000000
@@ -277,7 +291,7 @@ onMounted(() => {
     // remove ship which are not send data
     Object.keys(ships).forEach((shipId: any) => {
       if (!data['ships'].some((shipData: any) => shipData['uuid'] === shipId)) {
-        test.scene.remove(ships[shipId])
+        test.scene.remove(ships[shipId].group)
         delete ships[shipId]
       }
     })
