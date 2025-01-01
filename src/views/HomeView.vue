@@ -38,6 +38,11 @@ loadModel(
   onLoad
 )
 
+let theshipTrajectory = new THREE.Points(
+  new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([], 3)),
+  new THREE.PointsMaterial({ color: 0x57f94d, size: 2 })
+)
+
 const solarSystem = new THREE.Group()
 
 const sun = new THREE.Group()
@@ -192,6 +197,8 @@ onMounted(() => {
     trajectories.sombronce
   )
 
+  solarSystem.add(theshipTrajectory)
+
   const ships: any = {}
 
   setInterval(() => {
@@ -200,6 +207,7 @@ onMounted(() => {
     addPointToTrajectory(cravite.group, trajectories.cravite, !loading.value)
     addPointToTrajectory(leviathe.group, trajectories.leviathe, !loading.value)
     addPointToTrajectory(sombronce.group, trajectories.sombronce, !loading.value)
+    addPointToTrajectory(theship, theshipTrajectory, !loading.value)
     Object.keys(ships).forEach((shipId: any) => {
       addPointToTrajectory(ships[shipId].group, ships[shipId].trajectory, !loading.value)
     })
@@ -273,6 +281,7 @@ onMounted(() => {
         )
 
         solarSystem.add(ships[shipId].group)
+        solarSystem.add(ships[shipId].trajectory)
         fetchShipHistory(shipId, ships)
       }
 
