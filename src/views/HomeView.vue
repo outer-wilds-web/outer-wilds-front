@@ -206,7 +206,7 @@ onMounted(() => {
   }, 500)
 
   // Connect to WebSocker
-  const ws = new WebSocket('ws://localhost:3012')
+  const ws = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL)
 
   // Animate solar system
   const animate = () => {
