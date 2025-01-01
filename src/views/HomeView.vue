@@ -201,7 +201,7 @@ onMounted(() => {
   }, 500)
 
   // Connect to WebSocker
-  const ws = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL);
+  const ws = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL)
 
   // Animate solar system
   const animate = () => {
@@ -372,8 +372,14 @@ function toggleFreeCamera() {
   <LoadingOverlay :progress="loadingProgress" :loading="loading" />
   <canvas id="canvas" />
   <OptionButton class="options" @click="toggleSettingPanel" />
-  <SettingsPanel v-if="settingPanelVisible" class="settings-panel" :free-camera="freeCamera" :focus="cameraFocus"
-    @change-focus="handleChangeFocus" @toggle-free-camera="toggleFreeCamera" />
+  <SettingsPanel
+    v-if="settingPanelVisible"
+    class="settings-panel"
+    :free-camera="freeCamera"
+    :focus="cameraFocus"
+    @change-focus="handleChangeFocus"
+    @toggle-free-camera="toggleFreeCamera"
+  />
 </template>
 
 <style lang="scss" scoped>
