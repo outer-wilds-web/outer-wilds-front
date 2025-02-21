@@ -286,14 +286,14 @@ onMounted(() => {
       }
 
       ships[shipId].group.position.set(
-        shipData['position'][0],
-        shipData['position'][1],
-        shipData['position'][2]
+        shipData['body']['position'][0],
+        shipData['body']['position'][1],
+        shipData['body']['position'][2]
       )
       ships[shipId].group.lookAt(
-        shipData['direction'][0] * 1000000,
-        shipData['direction'][1] * 1000000,
-        shipData['direction'][2] * 1000000
+        shipData['body']['direction'][0] * 1000000,
+        shipData['body']['direction'][1] * 1000000,
+        shipData['body']['direction'][2] * 1000000
       )
     })
 
