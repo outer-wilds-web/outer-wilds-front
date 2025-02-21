@@ -51,14 +51,14 @@ loadModel(
   test,
   '3DModels/sun.glb',
   '3DModels/solar_system/sun.glb',
-  [1, 1, 1],
+  [35, 35, 35],
   [0, 0, 0],
   onLoad
 )
 
 const sablieres = new Planet(
-  0.01,
-  16,
+  0.09,
+  0,
   0,
   '3DModels/sand_earth.glb',
   '3DModels/solar_system/mercury.glb',
@@ -67,8 +67,8 @@ const sablieres = new Planet(
 )
 
 const atrebois = new Planet(
-  0.01,
-  32,
+  0.15,
+  0,
   0,
   '3DModels/timber_earth.glb',
   '3DModels/solar_system/venus.glb',
@@ -77,8 +77,8 @@ const atrebois = new Planet(
 )
 
 const cravite = new Planet(
-  0.01,
-  64,
+  0.18,
+  0,
   0,
   '3DModels/cravite_earth.glb',
   '3DModels/solar_system/earth.glb',
@@ -87,8 +87,8 @@ const cravite = new Planet(
 )
 
 const leviathe = new Planet(
-  0.01,
-  128,
+  0.4,
+  0,
   0,
   '3DModels/leviathe_earth.glb',
   '3DModels/solar_system/mars.glb',
@@ -97,8 +97,8 @@ const leviathe = new Planet(
 )
 
 const sombronce = new Planet(
-  0.01,
-  256,
+  0.3,
+  0,
   0,
   '3DModels/sombronce_earth.glb',
   '3DModels/solar_system/jupiter.glb',
@@ -241,11 +241,11 @@ onMounted(() => {
   ws.onmessage = (message) => {
     const data = JSON.parse(message.data)
 
-    sablieres.group.position.set(data['planets'][0][1][0], data['planets'][0][1][1], 0)
-    atrebois.group.position.set(data['planets'][1][1][0], data['planets'][1][1][1], 0)
-    cravite.group.position.set(data['planets'][2][1][0], data['planets'][2][1][1], 0)
-    leviathe.group.position.set(data['planets'][3][1][0], data['planets'][3][1][1], 0)
-    sombronce.group.position.set(data['planets'][4][1][0], data['planets'][4][1][1], 0)
+    sablieres.group.position.set(data['planets'][1][1][0], data['planets'][1][1][1], 0)
+    atrebois.group.position.set(data['planets'][2][1][0], data['planets'][2][1][1], 0)
+    cravite.group.position.set(data['planets'][3][1][0], data['planets'][3][1][1], 0)
+    leviathe.group.position.set(data['planets'][4][1][0], data['planets'][4][1][1], 0)
+    sombronce.group.position.set(data['planets'][5][1][0], data['planets'][5][1][1], 0)
     theship.position.set(
       data['ship']['position'][0],
       data['ship']['position'][1],
