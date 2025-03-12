@@ -13,6 +13,8 @@ import { sendShipData } from '@/helpers/websocket_helper'
 
 const loading = ref(true)
 const loadingProgress = ref(0)
+const ships_uuid = ref<string[]>([])
+const ships: any = {}
 
 const totalModels = 8
 let loadedModels = 0
@@ -199,8 +201,6 @@ onMounted(() => {
 
   solarSystem.add(theshipTrajectory)
 
-  const ships: any = {}
-
   setInterval(() => {
     addPointToTrajectory(sablieres.group, trajectories.sablieres, !loading.value)
     addPointToTrajectory(atrebois.group, trajectories.atrebois, !loading.value)
@@ -213,7 +213,7 @@ onMounted(() => {
     })
   }, 500)
 
-  // Connect to WebSocker
+  // Connect to WebSocket
   const ws = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL)
 
   // Animate solar system
@@ -282,6 +282,7 @@ onMounted(() => {
 
         solarSystem.add(ships[shipId].group)
         solarSystem.add(ships[shipId].trajectory)
+        ships_uuid.value.push(shipId)
         fetchShipHistory(shipId, ships)
       }
 
@@ -302,6 +303,7 @@ onMounted(() => {
       if (!data['ships'].some((shipData: any) => shipData['uuid'] === shipId)) {
         test.scene.remove(ships[shipId].group)
         delete ships[shipId]
+        ships_uuid.value = ships_uuid.value.filter((uuid) => uuid !== shipId)
       }
     })
 
@@ -359,6 +361,12 @@ function updateCamera(x: number, y: number, z: number = 0) {
   test.controls.target.set(x, y, z)
 }
 
+function updateCameraShips(uuid: string) {
+  const ship: any = ships[uuid]
+  updateCamera(ship.group.position.x, ship.group.position.y, 0)
+  cameraFocus.value = 'ship'
+}
+
 function handleChangeFocus(logo: string) {
   if (logo === 'sun') {
     updateCamera(0, 0, 0)
@@ -400,6 +408,8 @@ function toggleFreeCamera() {
     class="settings-panel"
     :free-camera="freeCamera"
     :focus="cameraFocus"
+    :ships_uuid="ships_uuid"
+    @updateCameraShips="updateCameraShips"
     @change-focus="handleChangeFocus"
     @toggle-free-camera="toggleFreeCamera"
   />

@@ -22,7 +22,8 @@ import { useSetupStore } from '@/stores/setup'
 
 const props = defineProps({
   freeCamera: Boolean,
-  focus: String
+  focus: String,
+  ships_uuid: Array<string>
 })
 
 //#region :    --- Authentication
@@ -58,7 +59,7 @@ onMounted(async () => {
 
 //#endregion : --- Authentication
 
-const emit = defineEmits(['changeFocus', 'toggleFreeCamera'])
+const emit = defineEmits(['changeFocus', 'toggleFreeCamera', 'updateCameraShips'])
 
 const handleLogoClick = (logo: string) => {
   emit('changeFocus', logo)
@@ -66,6 +67,10 @@ const handleLogoClick = (logo: string) => {
 
 const toggleFreeCamera = () => {
   emit('toggleFreeCamera')
+}
+
+const handleUpdateCamera = (uuid: string) => {
+  emit('updateCameraShips', uuid)
 }
 </script>
 
@@ -111,6 +116,12 @@ const toggleFreeCamera = () => {
           @click="() => handleLogoClick('theship')"
         />
       </div>
+      <div class="ships">
+        <h3>Ships</h3>
+        <div v-for="ship in ships_uuid" :key="ship" @click="() => handleUpdateCamera(ship)">
+          <p>{{ ship }}</p>
+        </div>
+      </div>
       <div class="toggles">
         <ToggleButton class="toggle" :checked="freeCamera" @change="toggleFreeCamera"
           >Free Camera</ToggleButton
@@ -153,6 +164,21 @@ const toggleFreeCamera = () => {
       border-radius: 50%;
       margin-top: 10px;
       cursor: pointer;
+    }
+  }
+
+  .ships {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 20px;
+
+    div {
+      cursor: pointer;
+    }
+
+    p {
+      margin-bottom: 10px;
     }
   }
 
