@@ -364,7 +364,7 @@ function updateCamera(x: number, y: number, z: number = 0) {
 function updateCameraShips(uuid: string) {
   const ship: any = ships[uuid]
   updateCamera(ship.group.position.x, ship.group.position.y, 0)
-  cameraFocus.value = 'ship'
+  cameraFocus.value = uuid
 }
 
 function handleChangeFocus(logo: string) {
@@ -389,6 +389,8 @@ function handleChangeFocus(logo: string) {
   } else if (logo == 'theship') {
     updateCamera(theship.position.x, theship.position.y + 3, theship.position.z)
     cameraFocus.value = 'theship'
+  } else {
+    updateCameraShips(logo)
   }
 }
 
