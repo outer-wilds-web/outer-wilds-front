@@ -79,7 +79,7 @@ const atrebois = new Planet(
 )
 
 const cravite = new Planet(
-  0.18,
+  0.4,
   0,
   0,
   '3DModels/cravite_earth.glb',
@@ -89,7 +89,7 @@ const cravite = new Planet(
 )
 
 const leviathe = new Planet(
-  0.4,
+  0.25,
   0,
   0,
   '3DModels/leviathe_earth.glb',
